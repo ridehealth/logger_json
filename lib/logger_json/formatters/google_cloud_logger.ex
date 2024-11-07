@@ -54,12 +54,19 @@ defmodule LoggerJSON.Formatters.GoogleCloudLogger do
     )
   end
 
+  @trash_keys [:erl_level, :file, :function, :line, :mfa, :module, :pid, :time, :gl, :domain]
+
   defp format_metadata(md, md_keys) do
+    labels = md
+    |> Keyword.drop(@trash_keys)
+    |> Enum.into(%{})
+
     LoggerJSON.take_metadata(md, md_keys, @processed_metadata_keys)
     |> JasonSafeFormatter.format()
     |> FormatterUtils.maybe_put(:error, FormatterUtils.format_process_crash(md))
     |> FormatterUtils.maybe_put(:"logging.googleapis.com/sourceLocation", format_source_location(md))
     |> FormatterUtils.maybe_put(:"logging.googleapis.com/operation", format_operation(md))
+    |> FormatterUtils.maybe_put(:"logging.googleapis.com/labels", labels)
   end
 
   defp format_operation(md) do
